@@ -6,11 +6,10 @@ from collections import deque, namedtuple
 import itertools
 
 
-def train(agent, n_episodes=2000, print_every=500):
+def train(agent, n_episodes=2000, print_every=100):
 
     scores_deque = deque(maxlen=100)
     scores = []
-    avg_scores = []
     
     # noise management
     noise_factor = 1.0
@@ -72,6 +71,9 @@ def train(agent, n_episodes=2000, print_every=500):
         if  i_episode % print_every == 0 :
             print('\rEpisode {} \t Average Score : {:.5f}'.format(i_episode, avg_score))
 
+        if max_avg_score > 1.5 :
+            break
+
     return max_avg_score, i_episode_max
 
 
@@ -99,10 +101,10 @@ if __name__ == '__main__' :
     
     # train(learner, n_episodes=10000)
 
-    batch_sizes = [16, 32, 64]
-    taus = [9e-3, 2e-2]   #[5e-3, 9e-3, 1e-2, 2e-2]
-    lr_actors = [5e-5, 5e-4] #[5e-5, 1e-4, 5e-4, 1e-3]
-    lr_critics = [1e-4, 5e-4]
+    batch_sizes = [32]#[16, 32, 64]
+    taus = [9e-3]   #[5e-3, 9e-3, 1e-2, 2e-2]
+    lr_actors = [5e-5] #[5e-5, 1e-4, 5e-4, 1e-3]
+    lr_critics = [1e-4] #[1e-4, 5e-4]
     update_everys = [2]
 
     configs = []

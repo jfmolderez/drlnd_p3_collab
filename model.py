@@ -13,7 +13,7 @@ class ActorNetwork(nn.Module):
     """
     The Actor network is an approximation of the policy function that maps states to actions
     """ 
-    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=256):
+    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=256, normalize=False):
         """Initialize parameters and build model.
         Params
         ======
@@ -29,7 +29,10 @@ class ActorNetwork(nn.Module):
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
         self.bn1 = nn.BatchNorm1d(fc1_units)
+        self.bn2 = nn.BatchNorm1d(fc2_units)
         self.reset_parameters()
+
+        self.normalize =normalize
         
     def reset_parameters(self):
         self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
@@ -39,9 +42,17 @@ class ActorNetwork(nn.Module):
     def forward(self, state):
         if state.dim() == 1 :
             state = torch.unsqueeze(state, 0)
-        x = F.leaky_relu(self.fc1(state))
-        #x = self.bn1(x)
-        x = F.leaky_relu(self.fc2(x))
+
+        if not self.normalize :
+            x = F.leaky_relu(self.fc1(state))
+            x = F.leaky_relu(self.fc2(x)) 
+        else :  
+            x = self.fc1(state)
+            if x.dim() == 3 :
+                x = torch.squeeze(x)
+            x = F.leaky_relu(self.bn1(x))
+            x = F.leaky_relu(self.bn2(self.fc2(x)))
+        
         return F.tanh(self.fc3(x))
 
 class CriticNetwork(nn.Module):
@@ -51,7 +62,7 @@ class CriticNetwork(nn.Module):
     Since this is a collaborative context, the critic receives as inputs the states and actions
     for both agents
     """ 
-    def __init__(self, state_size, action_size, seed, num_agents=2, fc1_units=256, fc2_units=256):
+    def __init__(self, state_size, action_size, seed, num_agents=2, fc1_units=256, fc2_units=256, normalize=False):
         """Initialize parameters and build model.
         Params
         ======
@@ -68,7 +79,10 @@ class CriticNetwork(nn.Module):
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, 1) 
         self.bn1 = nn.BatchNorm1d(fc1_units)
+        self.bn2 = nn.BatchNorm1d(fc2_units)
         self.reset_parameters()
+
+        self.normalize = normalize
         
     def reset_parameters(self):
         self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
@@ -77,7 +91,10 @@ class CriticNetwork(nn.Module):
          
     def forward(self, states, actions):
         xs = torch.cat((states, actions), dim=1)
-        x = F.leaky_relu(self.fc1(xs))
-        #x = self.bn1(x)
-        x = F.leaky_relu(self.fc2(x))
+        if not self.normalize :
+            x = F.leaky_relu(self.fc1(xs))
+            x = F.leaky_relu(self.fc2(x))
+        else :
+            x = F.leaky_relu(self.bn1(self.fc1(xs)))
+            x = F.leaky_relu(self.bn2(self.fc2(x)))
         return self.fc3(x)

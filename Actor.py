@@ -21,7 +21,7 @@ class Actor() :
     def __init__(self, state_size, action_size, random_seed, learning_rate, noise, device):
         self.state_size = state_size
         self.action_size = action_size
-        self.seed= random.seed(random_seed)
+        self.seed = random.seed(random_seed)
         self.learning_rate = learning_rate
 
         self.actor_local = ActorNetwork(state_size, action_size, random_seed).to(device)
